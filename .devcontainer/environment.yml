@@ -1,0 +1,23 @@
+# Project-level conda packages layered on top of vim_deploy's base environment.
+# vim_deploy already installs: nvim, verible, pyright, clangd, ripgrep, fd-find, nodejs.
+name: base
+channels:
+  - conda-forge
+dependencies:
+  # Analysis
+  - pandas
+  - matplotlib
+  - plotly
+  # Jupyter
+  - jupyter
+  - jupyterlab
+  - nbstripout
+  - ipywidgets
+  - nbformat
+  # Utilities
+  - tqdm
+  - pyyaml
+  - pip
+  - pip:
+    - kaleido        # plotly static image export (only on PyPI, not conda-forge)
+    - fusesoc        # install into conda env so it uses Python 3.14 (avoids PYTHONPATH clash with system Python 3.12)

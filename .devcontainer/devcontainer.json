@@ -1,0 +1,19 @@
+{
+  "name": "soc_chisel",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "regfile_minmax",
+  "runServices": ["regfile_minmax"],
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "eamodio.gitlens",
+        "lramseyer.vaporview",
+        "eirikpre.systemverilog",
+        "chipsalliance.verible-vscode",
+        "ms-python.python"
+      ]
+    }
+  }
+}

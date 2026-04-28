@@ -1,0 +1,22 @@
+services:
+  regfile_minmax:
+    image: ghcr.io/lawrence-lugs/regfile_minmax/regfile-study:latest
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      cache_from:
+        - ghcr.io/lawrence-lugs/regfile_minmax/regfile-study:buildcache
+    volumes:
+      - ..:/workspace
+      - conda_pkgs:/root/miniforge3/pkgs
+    ports:
+      - "8888:8888"
+    environment:
+      - PDK_ROOT=/foss/pdks
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: ["--skip", "bash"]
+
+volumes:
+  conda_pkgs:

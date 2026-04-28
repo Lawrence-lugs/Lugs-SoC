@@ -1,0 +1,6 @@
+# This YAML configures librelane for the top level of the SoC.
+
+# Job:
+# - Integrates the Ibex IP, sram macro, and TPU macro
+# - Runs a padring flow.
+# - Has the top-level instantiations and axi

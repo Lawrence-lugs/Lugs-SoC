@@ -1,0 +1,78 @@
+# LibreLane hardening configuration for the SRAM macro wrapper.
+#
+# Flow:
+#   1. Synthesis   - synthesises sram_1rw_32_1024_wrapper (thin glue RTL)
+#   2. Floorplan   - places the IHP SRAM hard macro; stdcells fill the margins
+#   3. Placement   - places remaining glue stdcells around the macro
+#   4. CTS / Route - clock tree + global/detailed routing
+#   5. Signoff     - DRC, LVS, STA
+#
+# Pre-compiled IHP SRAM macro (from installed PDK):
+#   /foss/pdks/ihp-sg13g2/libs.ref/sg13g2_sram/
+#   Macro: RM_IHPSG13_1P_1024x32_c2_bm_bist (1024 x 32-bit, single-port)
+#   Size:  416.64 x 336.46 um
+
+meta:
+  version: 2
+
+# -- Design ------------------------------------------------------------------
+DESIGN_NAME: sram_1rw_32_1024_wrapper
+
+VERILOG_FILES:
+  - dir::src/sram_wrapper.sv
+
+# Blackbox stub so Yosys can resolve the SRAM port interface during synthesis.
+# The simulation Verilog (with specify/setuphold) is never passed to Yosys.
+EXTRA_VERILOG_MODELS:
+  - dir::src/RM_IHPSG13_1P_1024x32_c2_bm_bist_bb.v
+
+# -- PDK ---------------------------------------------------------------------
+PDK: ihp-sg13g2
+STD_CELL_LIBRARY: sg13g2_stdcell
+
+# -- Timing ------------------------------------------------------------------
+CLOCK_PORT: clk
+CLOCK_PERIOD: 10.0   # 100 MHz
+
+# -- Floorplan ---------------------------------------------------------------
+# Die area: SRAM footprint (416.64 x 336.46 um) + 15 um margin each side.
+FP_SIZING: absolute
+DIE_AREA: [0, 0, 446.64, 366.46]
+
+# Low utilisation: the macro dominates the die; stdcells live in the margins.
+FP_CORE_UTIL: 10
+
+# Explicit hard-macro placement (origin + 15 um margin).
+MACRO_PLACEMENT_CFG: dir::src/macro_placement.cfg
+
+# -- Hard macro definition ---------------------------------------------------
+MACROS:
+  RM_IHPSG13_1P_1024x32_c2_bm_bist:
+    gds:
+      - /foss/pdks/ihp-sg13g2/libs.ref/sg13g2_sram/gds/RM_IHPSG13_1P_1024x32_c2_bm_bist.gds
+    lef:
+      - /foss/pdks/ihp-sg13g2/libs.ref/sg13g2_sram/lef/RM_IHPSG13_1P_1024x32_c2_bm_bist.lef
+    spice:
+      - /foss/pdks/ihp-sg13g2/libs.ref/sg13g2_sram/cdl/RM_IHPSG13_1P_1024x32_c2_bm_bist.cdl
+    lib:
+      "*typ*":
+        - /foss/pdks/ihp-sg13g2/libs.ref/sg13g2_sram/lib/RM_IHPSG13_1P_1024x32_c2_bm_bist_typ_1p20V_25C.lib
+      "*fast*":
+        - /foss/pdks/ihp-sg13g2/libs.ref/sg13g2_sram/lib/RM_IHPSG13_1P_1024x32_c2_bm_bist_fast_1p32V_m55C.lib
+      "*slow*":
+        - /foss/pdks/ihp-sg13g2/libs.ref/sg13g2_sram/lib/RM_IHPSG13_1P_1024x32_c2_bm_bist_slow_1p08V_125C.lib
+
+# -- Power distribution network ----------------------------------------------
+PDN_VOFFSET: 5
+PDN_HOFFSET: 5
+PDN_VWIDTH: 1.6
+PDN_HWIDTH: 1.6
+PDN_VPITCH: 50
+PDN_HPITCH: 50
+PDN_SKIPTRIM: true
+
+# -- IHP SG13G2 overrides ----------------------------------------------------
+pdk::ihp-sg13g2:
+  CLOCK_PERIOD: 10.0
+  FP_CORE_UTIL: 10
+  PL_TARGET_DENSITY_PCT: 15

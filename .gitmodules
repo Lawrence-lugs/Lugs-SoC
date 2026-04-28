@@ -1,0 +1,6 @@
+[submodule "ibex-build/ibex"]
+	path = ibex-build/ibex
+	url = https://github.com/lowRISC/ibex.git
+[submodule "tpu-build/tpu"]
+	path = tpu-build/tpu
+	url = git@github.com:Lawrence-lugs/tpu.git
