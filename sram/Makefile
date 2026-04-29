@@ -27,14 +27,22 @@ all: prep harden
 
 # -- Step 1: Validate PDK SRAM collateral ---------------------------------
 prep:
-$(PYTHON) compile_sram.py
+	$(PYTHON) compile_sram.py
 
 # -- Step 2: LibreLane macro hardening ------------------------------------
+# Invoke /usr/local/bin/librelane directly (NOT the /foss/tools/bin/librelane
+# wrapper) to prevent the wrapper's "export PATH=openroad-librelane/bin:$PATH"
+# from prepending OpenSTA 2.6.0 ahead of the system OpenSTA 2.7.0.
+# The wrapper also forces --manual-pdk, which we set explicitly here.
 harden:
-mkdir -p build
-env -u PYTHONPATH PATH=$(SYS_PATH) PDK_ROOT=$(PDK_ROOT) PDK=$(PDK) \
-    librelane config.yaml
+	mkdir -p build
+	env -u PYTHONPATH PATH=$(SYS_PATH) PDK_ROOT=$(PDK_ROOT) PDK=$(PDK) \
+	    /usr/local/bin/librelane --manual-pdk config.yaml
 
 # -- Housekeeping ---------------------------------------------------------
 clean:
-rm -rf build
+	rm -rf build
+
+test-base:
+	@echo "Running SRAM base tests..."
+	@echo "TODO: Add SRAM simulation tests here"

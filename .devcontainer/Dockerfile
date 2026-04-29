@@ -11,7 +11,7 @@ USER root
 # [vim_deploy] INJECTION START
 # ==============================================================================
 # 1. Install prerequisites
-RUN apt-get update && apt-get install -y git curl wget 
+RUN apt-get update && apt-get install -y git curl wget
 
 # 2. Clone and Run the Installer
 # NOTE: We clone to a permanent path (/root/.vim_deploy) and DO NOT delete it.
@@ -38,5 +38,8 @@ COPY .devcontainer/environment.yml /tmp/project_environment.yml
 RUN mamba env update -n base -f /tmp/project_environment.yml && \
     conda clean -afy
 
+# Newer layers
+
+RUN apt-get update && apt-get install -y libelf-dev srecord
 
 WORKDIR /workspace
