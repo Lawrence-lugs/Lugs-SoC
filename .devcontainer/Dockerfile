@@ -11,7 +11,7 @@ USER root
 # [vim_deploy] INJECTION START
 # ==============================================================================
 # 1. Install prerequisites
-RUN apt-get update && apt-get install -y git curl wget
+RUN apt-get update && apt-get install -y git curl wget 
 
 # 2. Clone and Run the Installer
 # NOTE: We clone to a permanent path (/root/.vim_deploy) and DO NOT delete it.

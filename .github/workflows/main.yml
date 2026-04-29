@@ -6,42 +6,64 @@ on:
   pull_request:
 
 env:
-  IMAGE: ghcr.io/lawrence-lugs/regfile_minmax/regfile-study
+  IMAGE: ghcr.io/lawrence-lugs/lugs-soc/lugs-soc-tools
 
 jobs:
 
-  # ── 1. Build container image (docker-compose → buildx bake, cache via GHCR) ──
+  # ── 0. Detect which paths changed ────────────────────────────────────────────
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      devcontainer: ${{ steps.filter.outputs.devcontainer }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            devcontainer:
+              - '.devcontainer/**'
+
+  # ── 1. Build container image (only when .devcontainer changes) ───────────────
   docker:
     name: Build container
+    needs: changes
+    if: needs.changes.outputs.devcontainer == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (GH)
+        uses: actions/checkout@v4
 
-      - uses: docker/setup-buildx-action@v3
 
-      - uses: docker/login-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Use docker-compose.yml as the bake source so all build config (context,
-      # dockerfile, cache_from) is kept in one place.  We only add cache-to here
-      # because the compose file already declares cache_from.
-      - name: Build and push (bake from docker-compose.yml)
-        run: |
-          docker buildx bake \
-            -f .devcontainer/docker-compose.yml \
-            --push \
-            --set "regfile_minmax.cache-to=type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE }}:latest
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max
+  
   # ── 2. Per-subfolder base tests (parallel matrix) ────────────────────────────
   test-base:
     name: test-base / ${{ matrix.subfolder }}
-    needs: docker
+    needs: [changes, docker]
+    if: always() && needs.changes.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,7 +73,7 @@ jobs:
       matrix:
         subfolder: [ibex-build, tpu-build, sram]
     container:
-      image: ghcr.io/lawrence-lugs/regfile_minmax/regfile-study:latest
+      image: ghcr.io/lawrence-lugs/lugs-soc/lugs-soc-tools:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -63,6 +85,9 @@ jobs:
       # tpu submodule uses SSH; rewrite to HTTPS so CI can clone it without a key.
       - name: Rewrite SSH submodule URLs to HTTPS
         run: git config --global url."https://github.com/".insteadOf "git@github.com:"
+
+      - name: Configure git safe.directory
+        run: git config --global --add safe.directory '*'
 
       - name: Checkout submodules
         run: git submodule update --init --recursive
@@ -79,7 +104,7 @@ jobs:
       contents: read
       packages: read
     container:
-      image: ghcr.io/lawrence-lugs/regfile_minmax/regfile-study:latest
+      image: ghcr.io/lawrence-lugs/lugs-soc/lugs-soc-tools:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -102,7 +127,7 @@ jobs:
       matrix:
         subfolder: [ibex-build, tpu-build, sram]
     container:
-      image: ghcr.io/lawrence-lugs/regfile_minmax/regfile-study:latest
+      image: ghcr.io/lawrence-lugs/lugs-soc/lugs-soc-tools:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -113,6 +138,9 @@ jobs:
 
       - name: Rewrite SSH submodule URLs to HTTPS
         run: git config --global url."https://github.com/".insteadOf "git@github.com:"
+
+      - name: Configure git safe.directory
+        run: git config --global --add safe.directory '*'
 
       - name: Checkout submodules
         run: git submodule update --init --recursive
@@ -129,7 +157,7 @@ jobs:
       contents: read
       packages: read
     container:
-      image: ghcr.io/lawrence-lugs/regfile_minmax/regfile-study:latest
+      image: ghcr.io/lawrence-lugs/lugs-soc/lugs-soc-tools:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
