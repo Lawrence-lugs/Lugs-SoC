@@ -163,6 +163,19 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Rewrite SSH submodule URLs to HTTPS
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
+
+      - name: Configure git safe.directory
+        run: git config --global --add safe.directory '*'
+
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
 
       - name: Harden top-level SoC (padring + full LibreLane flow)
+        # make checks for outputs/.harden_done; if it exists the flow is
+        # already committed and this step becomes a fast no-op.
         run: make harden

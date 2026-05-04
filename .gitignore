@@ -2,6 +2,9 @@
 build/
 runs/
 
+# outputs/ is tracked in git (stamp + layout image), but large GDS files are not
+outputs/*.gds
+
 
 
 # Byte-compiled / optimized / DLL files

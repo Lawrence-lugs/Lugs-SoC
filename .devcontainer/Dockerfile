@@ -42,4 +42,12 @@ RUN mamba env update -n base -f /tmp/project_environment.yml && \
 
 RUN apt-get update && apt-get install -y libelf-dev srecord
 
+# Upgrade LibreLane to >= 3.0.0 (Chip/padring flow, added in 3.0.0).
+# The base hpretl/iic-osic-tools image ships 2.x; we pin to the latest 3.x release.
+# Use the system pip (python3.12) that the existing librelane install targets.
+# The -u PYTHONPATH flag avoids miniforge3 Python 3.14 interference.
+RUN env -u PYTHONPATH \
+    PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+    pip3 install --upgrade "librelane>=3.0.0"
+
 WORKDIR /workspace
