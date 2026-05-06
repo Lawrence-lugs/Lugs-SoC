@@ -12,6 +12,11 @@ PDK      ?= ihp-sg13g2
 
 SYS_PATH := /foss/tools/bin:/foss/tools/klayout:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+# KLayout technology search path — set explicitly so it is available even in
+# non-login CI shells that do not source /etc/profile.d/iic-osic-tools-setup.sh.
+PDKPATH      := $(PDK_ROOT)/$(PDK)
+KLAYOUT_PATH := /headless/.klayout:$(PDKPATH)/libs.tech/klayout:$(PDKPATH)/libs.tech/klayout/tech
+
 OUTPUTS_DIR := outputs
 STAMP       := $(OUTPUTS_DIR)/.harden_done
 SV2V_OUT    := build/sv2v/design.v
@@ -87,12 +92,14 @@ $(STAMP): $(SOURCES)
 	@mkdir -p $(OUTPUTS_DIR)
 	@echo "==> Running LibreLane Chip flow for $(DESIGN)..."
 	env -u PYTHONPATH PATH=$(SYS_PATH) PDK_ROOT=$(PDK_ROOT) PDK=$(PDK) \
+	    PDKPATH=$(PDKPATH) KLAYOUT_PATH=$(KLAYOUT_PATH) \
 	    /usr/local/bin/librelane --manual-pdk \
+	    --run-tag ci --overwrite \
 	    --save-views-to $(OUTPUTS_DIR) \
 	    config.yaml
 	@# Generate layout image (non-fatal if KLayout rendering fails)
 	@echo "==> Rendering layout image..."
-	env -u PYTHONPATH PATH=$(SYS_PATH) klayout -b \
+	env -u PYTHONPATH PATH=$(SYS_PATH) KLAYOUT_PATH=$(KLAYOUT_PATH) klayout -b \
 	    -r librelane/render_layout.py \
 	    -rd gds=$(OUTPUTS_DIR)/$(DESIGN).gds \
 	    -rd png=$(OUTPUTS_DIR)/layout.png || \
@@ -103,10 +110,10 @@ $(STAMP): $(SOURCES)
 # ── DRC (post-harden, standalone) ────────────────────────────────────────────
 # Uses run_drc.py from the PDK directly, bypassing LibreLane's checker gate.
 # GDS source: outputs/$(DESIGN).gds (copied there by the harden target).
-# Reports land in drc_reports/<variant>/.
+# Reports land in outputs/drc_reports/<variant>/.
 
 DRC_GDS := outputs/$(DESIGN).gds
-DRC_DIR := drc_reports
+DRC_DIR := outputs/drc_reports
 DRC_PY  := $(PDK_ROOT)/$(PDK)/libs.tech/klayout/tech/drc/run_drc.py
 
 # Fast: skip density + extra/maximal rules.  Good for iterative checking.

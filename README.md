@@ -72,4 +72,4 @@ after a successful local run) CI will skip the expensive LibreLane step.
 The final layout image is generated automatically after each successful flow run
 and saved to `outputs/layout.png`.
 
-![Layout](outputs/layout.png)
+![Layout](https://lawrence-lugs.github.io/Lugs-SoC/render/lugs_soc_chip.png)

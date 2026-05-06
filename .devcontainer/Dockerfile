@@ -1,5 +1,8 @@
-# Use the locally-cached tag; pin to a dated tag (e.g. 2024.12) for reproducibility.
-FROM hpretl/iic-osic-tools:latest
+# Pinned to 2026.02 — 2026.04 bundles IHP-Open-PDK commit be443daab which adds
+# self.technology='sg13g2' to PyCellLib, making library_by_name('SG13_dev')
+# return None without a technology argument. sealring.py uses the one-arg form.
+# Re-evaluate when IHP-Open-PDK or LibreLane fixes this upstream.
+FROM hpretl/iic-osic-tools:2026.02
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -51,3 +54,5 @@ RUN env -u PYTHONPATH \
     pip3 install --upgrade "librelane>=3.0.0"
 
 WORKDIR /workspace
+
+# trigger rebuild
