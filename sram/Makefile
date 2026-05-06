@@ -28,6 +28,11 @@ PDK      ?= ihp-sg13g2
 # Miniforge Python 3.14 is deliberately excluded to avoid _thread conflicts.
 SYS_PATH := /foss/tools/bin:/foss/tools/klayout:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+# KLayout technology search path — set explicitly so it is available even in
+# non-login CI shells that do not source /etc/profile.d/iic-osic-tools-setup.sh.
+PDKPATH      := $(PDK_ROOT)/$(PDK)
+KLAYOUT_PATH := /headless/.klayout:$(PDKPATH)/libs.tech/klayout:$(PDKPATH)/libs.tech/klayout/tech
+
 OUTPUTS_DIR := outputs
 STAMP       := $(OUTPUTS_DIR)/.harden_done
 
@@ -53,7 +58,9 @@ harden: $(STAMP)
 $(STAMP):
 	mkdir -p $(OUTPUTS_DIR)
 	env -u PYTHONPATH PATH=$(SYS_PATH) PDK_ROOT=$(PDK_ROOT) PDK=$(PDK) \
+	    PDKPATH=$(PDKPATH) KLAYOUT_PATH=$(KLAYOUT_PATH) \
 	    /usr/local/bin/librelane --manual-pdk \
+	    --run-tag ci --overwrite \
 	    --save-views-to $(OUTPUTS_DIR) \
 	    config.yaml
 	touch $@
