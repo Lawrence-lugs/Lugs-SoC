@@ -5,8 +5,9 @@ runs/
 .agents/
 
 
-# outputs/ is tracked in git (stamp + layout image), but large GDS files are not
-outputs/*.gds
+# outputs/ is produced by the build flow; never commit — CI uploads as artifacts
+outputs/
+sram/outputs/
 
 
 
@@ -26,7 +27,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/

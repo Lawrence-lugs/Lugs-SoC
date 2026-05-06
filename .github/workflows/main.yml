@@ -120,6 +120,15 @@ jobs:
         id: harden-sram
         run: make -C sram harden
 
+      # ── Upload SRAM outputs (always, so top-level harden can consume them) ──────
+      - name: Upload SRAM outputs
+        if: steps.harden-sram.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: outputs-sram
+          path: sram/outputs/
+          if-no-files-found: error
+
       # ── SRAM DRC (non-blocking) ───────────────────────────────────────────────
       - name: drc / sram
         id: drc-sram
@@ -138,6 +147,15 @@ jobs:
       - name: harden / top-level SoC
         id: harden-top
         run: make harden
+
+      # ── Upload top-level outputs ──────────────────────────────────────────────
+      - name: Upload top-level outputs
+        if: steps.harden-top.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: outputs-top
+          path: outputs/
+          if-no-files-found: error
 
       # ── Top-level DRC (non-blocking) ──────────────────────────────────────────
       - name: drc / top-level

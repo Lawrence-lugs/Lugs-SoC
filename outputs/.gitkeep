@@ -1,4 +1,0 @@
-# This file tracks the outputs/ directory in git.
-# The LibreLane flow writes results here after a successful run.
-# Committing this file (and outputs/.harden_done / outputs/layout.png)
-# allows CI to skip the expensive flow when results are already up-to-date.
