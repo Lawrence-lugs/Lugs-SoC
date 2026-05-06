@@ -210,3 +210,25 @@ jobs:
             echo "| harden / top-level SoC      | $(icon "$R_HARDEN_TOP")  \`$R_HARDEN_TOP\`  |"
             echo "| drc / top-level *(non-blocking)* | $(icon "$R_DRC_TOP") \`$R_DRC_TOP\` |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # ── 7. Publish layout image to GitHub Pages ──────────────────────────────────
+  pages:
+    name: Publish to GitHub Pages
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download top-level outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: outputs-top
+          path: outputs/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: outputs/
+          keep_files: false
