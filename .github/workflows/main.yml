@@ -140,7 +140,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: drc-reports-sram
-          path: sram/drc_reports/
+          path: sram/outputs/drc_reports/
           if-no-files-found: warn
 
       # ── Top-level SoC hardening ───────────────────────────────────────────────
@@ -168,7 +168,57 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: drc-reports-top
-          path: drc_reports/
+          path: outputs/drc_reports/
+          if-no-files-found: warn
+
+      # ── Write ci_results.json (always, so pages job can consume it) ───────────
+      - name: Write ci_results.json
+        if: always()
+        env:
+          R_TEST_IBEX:   ${{ steps.test-ibex.outcome }}
+          R_TEST_TPU:    ${{ steps.test-tpu.outcome }}
+          R_TEST_SRAM:   ${{ steps.test-sram.outcome }}
+          R_TEST_RTL:    ${{ steps.test-rtl.outcome }}
+          R_HARDEN_IBEX: ${{ steps.harden-ibex.outcome }}
+          R_HARDEN_TPU:  ${{ steps.harden-tpu.outcome }}
+          R_HARDEN_SRAM: ${{ steps.harden-sram.outcome }}
+          R_DRC_SRAM:    ${{ steps.drc-sram.outcome }}
+          R_HARDEN_TOP:  ${{ steps.harden-top.outcome }}
+          R_DRC_TOP:     ${{ steps.drc-top.outcome }}
+          COMMIT_SHA:    ${{ github.sha }}
+          RUN_ID:        ${{ github.run_id }}
+          REPO:          ${{ github.repository }}
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, datetime
+          data = {
+              "timestamp": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "commit_sha": os.environ["COMMIT_SHA"],
+              "run_id":     os.environ["RUN_ID"],
+              "run_url":    f"https://github.com/{os.environ['REPO']}/actions/runs/{os.environ['RUN_ID']}",
+              "stages": {
+                  "test_ibex":   os.environ["R_TEST_IBEX"],
+                  "test_tpu":    os.environ["R_TEST_TPU"],
+                  "test_sram":   os.environ["R_TEST_SRAM"],
+                  "test_rtl":    os.environ["R_TEST_RTL"],
+                  "harden_ibex": os.environ["R_HARDEN_IBEX"],
+                  "harden_tpu":  os.environ["R_HARDEN_TPU"],
+                  "harden_sram": os.environ["R_HARDEN_SRAM"],
+                  "drc_sram":    os.environ["R_DRC_SRAM"],
+                  "harden_top":  os.environ["R_HARDEN_TOP"],
+                  "drc_top":     os.environ["R_DRC_TOP"],
+              },
+          }
+          with open("ci_results.json", "w") as f:
+              json.dump(data, f, indent=2)
+          PYEOF
+
+      - name: Upload CI results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-results
+          path: ci_results.json
           if-no-files-found: warn
 
       # ── Pipeline summary (always runs, shows pass/fail table) ─────────────────
@@ -211,7 +261,7 @@ jobs:
             echo "| drc / top-level *(non-blocking)* | $(icon "$R_DRC_TOP") \`$R_DRC_TOP\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # ── 7. Publish layout image to GitHub Pages ──────────────────────────────────
+  # ── 7. Publish dashboard + outputs to GitHub Pages ─────────────────────────
   pages:
     name: Publish to GitHub Pages
     needs: ci
@@ -220,15 +270,27 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout repo (for docs/)
+        uses: actions/checkout@v4
+
       - name: Download top-level outputs
         uses: actions/download-artifact@v4
         with:
           name: outputs-top
-          path: outputs/
+          path: _deploy/
+
+      - name: Download CI results
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-results
+          path: _deploy/
+
+      - name: Merge docs/ into deploy root
+        run: cp -r docs/. _deploy/
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: outputs/
+          publish_dir: _deploy/
           keep_files: false

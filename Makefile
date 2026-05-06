@@ -103,10 +103,10 @@ $(STAMP): $(SOURCES)
 # ── DRC (post-harden, standalone) ────────────────────────────────────────────
 # Uses run_drc.py from the PDK directly, bypassing LibreLane's checker gate.
 # GDS source: outputs/$(DESIGN).gds (copied there by the harden target).
-# Reports land in drc_reports/<variant>/.
+# Reports land in outputs/drc_reports/<variant>/.
 
 DRC_GDS := outputs/$(DESIGN).gds
-DRC_DIR := drc_reports
+DRC_DIR := outputs/drc_reports
 DRC_PY  := $(PDK_ROOT)/$(PDK)/libs.tech/klayout/tech/drc/run_drc.py
 
 # Fast: skip density + extra/maximal rules.  Good for iterative checking.
