@@ -53,6 +53,8 @@ meta:
     # first TopMetal1 stripe (PDN_VOFFSET gap).  Non-fatal when LVS is skipped;
     # suppress the deferred-error gate.
     Checker.PowerGridViolations: null
+    # Skip Klayout.DRC in favor of the custom make call.
+    KLayout.DRC: null
 
 # -- Design -----------------------------------------------------------------
 DESIGN_NAME: lugs_soc_chip

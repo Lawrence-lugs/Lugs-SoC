@@ -2,6 +2,9 @@
 build/
 runs/
 
+.agents/
+
+
 # outputs/ is tracked in git (stamp + layout image), but large GDS files are not
 outputs/*.gds
 

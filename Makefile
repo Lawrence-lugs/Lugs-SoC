@@ -87,12 +87,9 @@ $(STAMP): $(SOURCES)
 	@mkdir -p $(OUTPUTS_DIR)
 	@echo "==> Running LibreLane Chip flow for $(DESIGN)..."
 	env -u PYTHONPATH PATH=$(SYS_PATH) PDK_ROOT=$(PDK_ROOT) PDK=$(PDK) \
-	    /usr/local/bin/librelane --manual-pdk config.yaml
-	@# Copy the final GDS from the most recent run to outputs/
-	@RUN=$$(ls -td runs/RUN_* 2>/dev/null | head -1); \
-	if [ -z "$$RUN" ]; then echo "ERROR: no librelane run directory found"; exit 1; fi; \
-	cp $$RUN/final/gds/$(DESIGN).gds $(OUTPUTS_DIR)/$(DESIGN).gds; \
-	echo "==> Final GDS → $(OUTPUTS_DIR)/$(DESIGN).gds"
+	    /usr/local/bin/librelane --manual-pdk \
+	    --save-views-to $(OUTPUTS_DIR) \
+	    config.yaml
 	@# Generate layout image (non-fatal if KLayout rendering fails)
 	@echo "==> Rendering layout image..."
 	env -u PYTHONPATH PATH=$(SYS_PATH) klayout -b \
