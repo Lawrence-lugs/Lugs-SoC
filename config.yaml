@@ -141,19 +141,19 @@ EXTRA_GDS:
 MACROS:
   sram_1rw_32_1024_wrapper:
     gds:
-      - dir::sram/runs/RUN_2026-04-29_14-34-44/final/gds/sram_1rw_32_1024_wrapper.gds
+      - dir::sram/outputs/gds/sram_1rw_32_1024_wrapper.gds
     lef:
-      - dir::sram/runs/RUN_2026-04-29_14-34-44/final/lef/sram_1rw_32_1024_wrapper.lef
+      - dir::sram/outputs/lef/sram_1rw_32_1024_wrapper.lef
     vh:
       # LibreLane-generated blackbox stub from the hardened sram/ sub-flow
-      - dir::sram/runs/RUN_2026-04-29_14-34-44/final/vh/sram_1rw_32_1024_wrapper.vh
+      - dir::sram/outputs/vh/sram_1rw_32_1024_wrapper.vh
     lib:
       "*_typ_1p20V_25C":
-        - dir::sram/runs/RUN_2026-04-29_14-34-44/final/lib/nom_typ_1p20V_25C/sram_1rw_32_1024_wrapper__nom_typ_1p20V_25C.lib
+        - dir::sram/outputs/lib/nom_typ_1p20V_25C/sram_1rw_32_1024_wrapper__nom_typ_1p20V_25C.lib
       "*_fast_1p32V_m40C":
-        - dir::sram/runs/RUN_2026-04-29_14-34-44/final/lib/nom_fast_1p32V_m40C/sram_1rw_32_1024_wrapper__nom_fast_1p32V_m40C.lib
+        - dir::sram/outputs/lib/nom_fast_1p32V_m40C/sram_1rw_32_1024_wrapper__nom_fast_1p32V_m40C.lib
       "*_slow_1p08V_125C":
-        - dir::sram/runs/RUN_2026-04-29_14-34-44/final/lib/nom_slow_1p08V_125C/sram_1rw_32_1024_wrapper__nom_slow_1p08V_125C.lib
+        - dir::sram/outputs/lib/nom_slow_1p08V_125C/sram_1rw_32_1024_wrapper__nom_slow_1p08V_125C.lib
     instances:
       # Hierarchy: lugs_soc_chip → u_lugs_soc → u_sram
       u_lugs_soc.u_sram:

@@ -11,7 +11,14 @@
 #   make prep        - validate PDK SRAM collateral
 #   make harden      - run LibreLane Classic flow on the SRAM wrapper
 #   make clean       - remove all build artefacts
+#
+# outputs/ is committed to git so that the top-level flow (and CI) can
+# consume the SRAM macro collateral (GDS, LEF, LIB, etc.) without
+# re-running the LibreLane hardening.  The stamp file (outputs/.harden_done)
+# acts as the make target; delete it (or the whole outputs/ dir) to force
+# a re-run.
 
+DESIGN   := sram_1rw_32_1024_wrapper
 PYTHON   ?= python
 PDK_ROOT ?= /foss/pdks
 PDK      ?= ihp-sg13g2
@@ -20,6 +27,9 @@ PDK      ?= ihp-sg13g2
 # EDA tools live in /foss/tools/bin and /foss/tools/klayout.
 # Miniforge Python 3.14 is deliberately excluded to avoid _thread conflicts.
 SYS_PATH := /foss/tools/bin:/foss/tools/klayout:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+OUTPUTS_DIR := outputs
+STAMP       := $(OUTPUTS_DIR)/.harden_done
 
 .PHONY: all prep harden clean
 
@@ -34,14 +44,42 @@ prep:
 # wrapper) to prevent the wrapper's "export PATH=openroad-librelane/bin:$PATH"
 # from prepending OpenSTA 2.6.0 ahead of the system OpenSTA 2.7.0.
 # The wrapper also forces --manual-pdk, which we set explicitly here.
-harden:
-	mkdir -p build
+#
+# --save-views-to copies the final views (GDS, LEF, LIB, SPEF, VH, NL …)
+# into outputs/ mirroring the 'final/' directory structure.  This is
+# LibreLane's built-in mechanism; no manual cp required.
+harden: $(STAMP)
+
+$(STAMP):
+	mkdir -p $(OUTPUTS_DIR)
 	env -u PYTHONPATH PATH=$(SYS_PATH) PDK_ROOT=$(PDK_ROOT) PDK=$(PDK) \
-	    /usr/local/bin/librelane --manual-pdk config.yaml
+	    /usr/local/bin/librelane --manual-pdk \
+	    --save-views-to $(OUTPUTS_DIR) \
+	    config.yaml
+	touch $@
+	@echo "==> Hardening complete. Results in $(OUTPUTS_DIR)/"
+
+# -- DRC (post-harden) ----------------------------------------------------
+DRC_GDS := $(OUTPUTS_DIR)/$(DESIGN).gds
+DRC_DIR := drc_reports
+DRC_PY  := $(PDK_ROOT)/$(PDK)/libs.tech/klayout/tech/drc/run_drc.py
+
+drc: $(DRC_GDS)
+	@mkdir -p $(DRC_DIR)
+	env -u PYTHONPATH PATH=$(SYS_PATH) python3 $(DRC_PY) \
+	    --path $(DRC_GDS) \
+	    --topcell $(DESIGN) \
+	    --run_mode deep \
+	    --mp $(shell nproc) \
+	    --run_dir $(DRC_DIR)/nodensity \
+	    --no_density \
+	    --disable_extra_rules \
+	    --no_recommended
+.PHONY: drc
 
 # -- Housekeeping ---------------------------------------------------------
 clean:
-	rm -rf build
+	rm -rf build runs $(OUTPUTS_DIR) $(DRC_DIR)
 
 test-base:
 	@echo "Running SRAM base tests..."
