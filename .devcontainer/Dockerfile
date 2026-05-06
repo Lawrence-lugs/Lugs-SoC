@@ -1,5 +1,5 @@
 # Use the locally-cached tag; pin to a dated tag (e.g. 2024.12) for reproducibility.
-FROM hpretl/iic-osic-tools:latest
+FROM hpretl/iic-osic-tools:2026.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
