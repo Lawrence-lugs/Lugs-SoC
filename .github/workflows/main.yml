@@ -38,7 +38,6 @@ jobs:
       - name: Checkout (GH)
         uses: actions/checkout@v4
 
-
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -58,20 +57,18 @@ jobs:
           tags: ${{ env.IMAGE }}:latest
           cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max
-  
-  # ── 2. Per-subfolder base tests (parallel matrix) ────────────────────────────
-  test-base:
-    name: test-base / ${{ matrix.subfolder }}
+
+  # ── 2–6. Full CI pipeline (single container pull) ────────────────────────────
+  # All test, harden, and DRC stages run as sequential steps in one job so the
+  # container image is pulled exactly once.
+  ci:
+    name: CI pipeline
     needs: [changes, docker]
     if: always() && needs.changes.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: read
-    strategy:
-      fail-fast: false
-      matrix:
-        subfolder: [ibex-build, tpu-build, sram]
     container:
       image: ghcr.io/lawrence-lugs/lugs-soc/lugs-soc-tools:latest
       credentials:
@@ -92,90 +89,106 @@ jobs:
       - name: Checkout submodules
         run: git submodule update --init --recursive
 
-      - name: Run test-base in ${{ matrix.subfolder }}
-        run: make -C ${{ matrix.subfolder }} test-base
+      # ── Base tests ────────────────────────────────────────────────────────────
+      - name: test-base / ibex-build
+        id: test-ibex
+        run: make -C ibex-build test-base
 
-  # ── 3. Top-level RTL test (runs only after all subfolder tests pass) ─────────
-  test-rtl:
-    name: test-rtl
-    needs: test-base
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
-    container:
-      image: ghcr.io/lawrence-lugs/lugs-soc/lugs-soc-tools:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
+      - name: test-base / tpu-build
+        id: test-tpu
+        run: make -C tpu-build test-base
 
-      - name: Run top-level RTL tests
+      - name: test-base / sram
+        id: test-sram
+        run: make -C sram test-base
+
+      # ── Top-level RTL tests ───────────────────────────────────────────────────
+      - name: test-rtl
+        id: test-rtl
         run: make test-rtl
 
-  # ── 4. Macro hardening — each subfolder in parallel ───────────────────────────
-  harden-macros:
-    name: harden / ${{ matrix.subfolder }}
-    needs: test-rtl
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
-    strategy:
-      fail-fast: false
-      matrix:
-        subfolder: [ibex-build, tpu-build, sram]
-    container:
-      image: ghcr.io/lawrence-lugs/lugs-soc/lugs-soc-tools:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
+      # ── Macro hardening ───────────────────────────────────────────────────────
+      - name: harden / ibex-build
+        id: harden-ibex
+        run: make -C ibex-build harden
+
+      - name: harden / tpu-build
+        id: harden-tpu
+        run: make -C tpu-build harden
+
+      - name: harden / sram
+        id: harden-sram
+        run: make -C sram harden
+
+      # ── SRAM DRC (non-blocking) ───────────────────────────────────────────────
+      - name: drc / sram
+        id: drc-sram
+        continue-on-error: true
+        run: make -C sram drc
+
+      - name: Upload SRAM DRC reports
+        if: always() && steps.drc-sram.outcome != 'skipped'
+        uses: actions/upload-artifact@v4
         with:
-          submodules: false
+          name: drc-reports-sram
+          path: sram/drc_reports/
+          if-no-files-found: warn
 
-      - name: Rewrite SSH submodule URLs to HTTPS
-        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
-
-      - name: Configure git safe.directory
-        run: git config --global --add safe.directory '*'
-
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
-
-      - name: Harden ${{ matrix.subfolder }} macro
-        run: make -C ${{ matrix.subfolder }} harden
-
-  # ── 5. Top-level SoC hardening (padring + full LibreLane flow) ───────────────
-  harden-top:
-    name: harden / top-level SoC
-    needs: harden-macros
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
-    container:
-      image: ghcr.io/lawrence-lugs/lugs-soc/lugs-soc-tools:latest
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: false
-
-      - name: Rewrite SSH submodule URLs to HTTPS
-        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
-
-      - name: Configure git safe.directory
-        run: git config --global --add safe.directory '*'
-
-      - name: Checkout submodules
-        run: git submodule update --init --recursive
-
-      - name: Harden top-level SoC (padring + full LibreLane flow)
-        # make checks for outputs/.harden_done; if it exists the flow is
-        # already committed and this step becomes a fast no-op.
+      # ── Top-level SoC hardening ───────────────────────────────────────────────
+      - name: harden / top-level SoC
+        id: harden-top
         run: make harden
+
+      # ── Top-level DRC (non-blocking) ──────────────────────────────────────────
+      - name: drc / top-level
+        id: drc-top
+        continue-on-error: true
+        run: make drc
+
+      - name: Upload top-level DRC reports
+        if: always() && steps.drc-top.outcome != 'skipped'
+        uses: actions/upload-artifact@v4
+        with:
+          name: drc-reports-top
+          path: drc_reports/
+          if-no-files-found: warn
+
+      # ── Pipeline summary (always runs, shows pass/fail table) ─────────────────
+      - name: Write pipeline summary
+        if: always()
+        env:
+          R_TEST_IBEX:  ${{ steps.test-ibex.outcome }}
+          R_TEST_TPU:   ${{ steps.test-tpu.outcome }}
+          R_TEST_SRAM:  ${{ steps.test-sram.outcome }}
+          R_TEST_RTL:   ${{ steps.test-rtl.outcome }}
+          R_HARDEN_IBEX: ${{ steps.harden-ibex.outcome }}
+          R_HARDEN_TPU:  ${{ steps.harden-tpu.outcome }}
+          R_HARDEN_SRAM: ${{ steps.harden-sram.outcome }}
+          R_DRC_SRAM:    ${{ steps.drc-sram.outcome }}
+          R_HARDEN_TOP:  ${{ steps.harden-top.outcome }}
+          R_DRC_TOP:     ${{ steps.drc-top.outcome }}
+        run: |
+          icon() {
+            case "$1" in
+              success)   echo "✅" ;;
+              failure)   echo "❌" ;;
+              cancelled) echo "⚠️" ;;
+              *)         echo "⏭️" ;;
+            esac
+          }
+          {
+            echo "## Pipeline Results"
+            echo ""
+            echo "| Stage | Status |"
+            echo "|-------|--------|"
+            echo "| test-base / ibex-build      | $(icon "$R_TEST_IBEX")  \`$R_TEST_IBEX\`  |"
+            echo "| test-base / tpu-build       | $(icon "$R_TEST_TPU")   \`$R_TEST_TPU\`   |"
+            echo "| test-base / sram            | $(icon "$R_TEST_SRAM")  \`$R_TEST_SRAM\`  |"
+            echo "| test-rtl                    | $(icon "$R_TEST_RTL")   \`$R_TEST_RTL\`   |"
+            echo "| harden / ibex-build         | $(icon "$R_HARDEN_IBEX") \`$R_HARDEN_IBEX\` |"
+            echo "| harden / tpu-build          | $(icon "$R_HARDEN_TPU")  \`$R_HARDEN_TPU\`  |"
+            echo "| harden / sram               | $(icon "$R_HARDEN_SRAM") \`$R_HARDEN_SRAM\` |"
+            echo "| drc / sram *(non-blocking)* | $(icon "$R_DRC_SRAM")    \`$R_DRC_SRAM\`    |"
+            echo "| harden / top-level SoC      | $(icon "$R_HARDEN_TOP")  \`$R_HARDEN_TOP\`  |"
+            echo "| drc / top-level *(non-blocking)* | $(icon "$R_DRC_TOP") \`$R_DRC_TOP\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
