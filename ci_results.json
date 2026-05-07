@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-05-07T09:04:22Z",
+  "commit_sha": "596c00db897118548c549b7384b7605b829a7402",
+  "run_id": "25485679596",
+  "run_url": "https://github.com/Lawrence-lugs/Lugs-SoC/actions/runs/25485679596",
+  "stages": {
+    "test_ibex": "success",
+    "test_tpu": "success",
+    "test_sram": "success",
+    "test_rtl": "success",
+    "harden_ibex": "success",
+    "harden_tpu": "success",
+    "harden_sram": "success",
+    "drc_sram": "failure",
+    "harden_top": "success",
+    "drc_top": "failure"
+  }
+}

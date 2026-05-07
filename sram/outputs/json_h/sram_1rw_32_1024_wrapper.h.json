@@ -1,0 +1,282 @@
+{
+  "creator": "Yosys 0.62 (git sha1 7326bb7d6, g++ 13.3.0-6ubuntu2~24.04 -fPIC -O3)",
+  "modules": {
+    "sram_1rw_32_1024_wrapper": {
+      "attributes": {
+        "hdlname": "sram_1rw_32_1024_wrapper",
+        "top": "00000000000000000000000000000001",
+        "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:23.1-61.10"
+      },
+      "ports": {
+        "clk": {
+          "direction": "input",
+          "bits": [ 2 ]
+        },
+        "cs": {
+          "direction": "input",
+          "bits": [ 3 ]
+        },
+        "we": {
+          "direction": "input",
+          "bits": [ 4 ]
+        },
+        "addr": {
+          "direction": "input",
+          "bits": [ 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ]
+        },
+        "wdata": {
+          "direction": "input",
+          "bits": [ 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46 ]
+        },
+        "wmask": {
+          "direction": "input",
+          "bits": [ 47, 48, 49, 50 ]
+        },
+        "rdata": {
+          "direction": "output",
+          "bits": [ 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82 ]
+        }
+      },
+      "cells": {
+        "$and$/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44$4": {
+          "hide_name": 1,
+          "type": "$and",
+          "parameters": {
+            "A_SIGNED": "00000000000000000000000000000000",
+            "A_WIDTH": "00000000000000000000000000000001",
+            "B_SIGNED": "00000000000000000000000000000000",
+            "B_WIDTH": "00000000000000000000000000000001",
+            "Y_WIDTH": "00000000000000000000000000000001"
+          },
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44.25-44.33"
+          },
+          "port_directions": {
+            "A": "input",
+            "B": "input",
+            "Y": "output"
+          },
+          "connections": {
+            "A": [ 3 ],
+            "B": [ 83 ],
+            "Y": [ 84 ]
+          }
+        },
+        "$not$/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:42$1": {
+          "hide_name": 1,
+          "type": "$not",
+          "parameters": {
+            "A_SIGNED": "00000000000000000000000000000000",
+            "A_WIDTH": "00000000000000000000000000000001",
+            "Y_WIDTH": "00000000000000000000000000000001"
+          },
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:42.23-42.26"
+          },
+          "port_directions": {
+            "A": "input",
+            "Y": "output"
+          },
+          "connections": {
+            "A": [ 3 ],
+            "Y": [ 85 ]
+          }
+        },
+        "$not$/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:43$2": {
+          "hide_name": 1,
+          "type": "$not",
+          "parameters": {
+            "A_SIGNED": "00000000000000000000000000000000",
+            "A_WIDTH": "00000000000000000000000000000001",
+            "Y_WIDTH": "00000000000000000000000000000001"
+          },
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:43.23-43.26"
+          },
+          "port_directions": {
+            "A": "input",
+            "Y": "output"
+          },
+          "connections": {
+            "A": [ 4 ],
+            "Y": [ 86 ]
+          }
+        },
+        "$not$/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44$3": {
+          "hide_name": 1,
+          "type": "$not",
+          "parameters": {
+            "A_SIGNED": "00000000000000000000000000000000",
+            "A_WIDTH": "00000000000000000000000000000001",
+            "Y_WIDTH": "00000000000000000000000000000001"
+          },
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44.30-44.33"
+          },
+          "port_directions": {
+            "A": "input",
+            "Y": "output"
+          },
+          "connections": {
+            "A": [ 4 ],
+            "Y": [ 83 ]
+          }
+        },
+        "$not$/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44$5": {
+          "hide_name": 1,
+          "type": "$not",
+          "parameters": {
+            "A_SIGNED": "00000000000000000000000000000000",
+            "A_WIDTH": "00000000000000000000000000000001",
+            "Y_WIDTH": "00000000000000000000000000000001"
+          },
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44.23-44.34"
+          },
+          "port_directions": {
+            "A": "input",
+            "Y": "output"
+          },
+          "connections": {
+            "A": [ 84 ],
+            "Y": [ 87 ]
+          }
+        },
+        "u_sram": {
+          "hide_name": 0,
+          "type": "RM_IHPSG13_1P_1024x32_c2_bm_bist",
+          "parameters": {
+          },
+          "attributes": {
+            "module_not_derived": "00000000000000000000000000000001",
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:40.38-59.6"
+          },
+          "port_directions": {
+            "A_ADDR": "input",
+            "A_BIST_ADDR": "input",
+            "A_BIST_BM": "input",
+            "A_BIST_CLK": "input",
+            "A_BIST_DIN": "input",
+            "A_BIST_EN": "input",
+            "A_BIST_MEN": "input",
+            "A_BIST_REN": "input",
+            "A_BIST_WEN": "input",
+            "A_BM": "input",
+            "A_CLK": "input",
+            "A_DIN": "input",
+            "A_DLY": "input",
+            "A_DOUT": "output",
+            "A_MEN": "input",
+            "A_REN": "input",
+            "A_WEN": "input"
+          },
+          "connections": {
+            "A_ADDR": [ 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ],
+            "A_BIST_ADDR": [ "0", "0", "0", "0", "0", "0", "0", "0", "0", "0" ],
+            "A_BIST_BM": [ "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0" ],
+            "A_BIST_CLK": [ "0" ],
+            "A_BIST_DIN": [ "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0" ],
+            "A_BIST_EN": [ "0" ],
+            "A_BIST_MEN": [ "1" ],
+            "A_BIST_REN": [ "1" ],
+            "A_BIST_WEN": [ "1" ],
+            "A_BM": [ 47, 47, 47, 47, 47, 47, 47, 47, 48, 48, 48, 48, 48, 48, 48, 48, 49, 49, 49, 49, 49, 49, 49, 49, 50, 50, 50, 50, 50, 50, 50, 50 ],
+            "A_CLK": [ 2 ],
+            "A_DIN": [ 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46 ],
+            "A_DLY": [ "1" ],
+            "A_DOUT": [ 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82 ],
+            "A_MEN": [ 85 ],
+            "A_REN": [ 87 ],
+            "A_WEN": [ 86 ]
+          }
+        }
+      },
+      "netnames": {
+        "$and$/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44$4_Y": {
+          "hide_name": 1,
+          "bits": [ 84 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44.25-44.33"
+          }
+        },
+        "$not$/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:42$1_Y": {
+          "hide_name": 1,
+          "bits": [ 85 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:42.23-42.26"
+          }
+        },
+        "$not$/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:43$2_Y": {
+          "hide_name": 1,
+          "bits": [ 86 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:43.23-43.26"
+          }
+        },
+        "$not$/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44$3_Y": {
+          "hide_name": 1,
+          "bits": [ 83 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44.30-44.33"
+          }
+        },
+        "$not$/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44$5_Y": {
+          "hide_name": 1,
+          "bits": [ 87 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:44.23-44.34"
+          }
+        },
+        "addr": {
+          "hide_name": 0,
+          "bits": [ 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:30.24-30.28"
+          }
+        },
+        "clk": {
+          "hide_name": 0,
+          "bits": [ 2 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:24.24-24.27"
+          }
+        },
+        "cs": {
+          "hide_name": 0,
+          "bits": [ 3 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:27.24-27.26"
+          }
+        },
+        "rdata": {
+          "hide_name": 0,
+          "bits": [ 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:34.24-34.29"
+          }
+        },
+        "wdata": {
+          "hide_name": 0,
+          "bits": [ 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:31.24-31.29"
+          }
+        },
+        "we": {
+          "hide_name": 0,
+          "bits": [ 4 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:28.24-28.26"
+          }
+        },
+        "wmask": {
+          "hide_name": 0,
+          "bits": [ 47, 48, 49, 50 ],
+          "attributes": {
+            "src": "/__w/Lugs-SoC/Lugs-SoC/sram/src/sram_wrapper.sv:32.24-32.29"
+          }
+        }
+      }
+    }
+  }
+}

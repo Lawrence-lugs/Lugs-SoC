@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lugs-SoC Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+  <style>
+    [x-cloak] { display: none; }
+    .tab-panel { animation: fadeIn 0.15s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    #panzoom-wrap { cursor: grab; }
+    #panzoom-wrap:active { cursor: grabbing; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen font-sans antialiased">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <svg class="w-5 h-5 text-indigo-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
+        </svg>
+        <span class="text-lg font-bold text-gray-900 tracking-tight">Lugs-SoC</span>
+        <span class="text-sm text-gray-400 font-medium hidden sm:inline">/ Dashboard</span>
+      </div>
+      <div id="build-meta" class="text-xs text-gray-400 text-right shrink-0 leading-tight"></div>
+    </div>
+  </header>
+
+  <!-- ── Tab bar ──────────────────────────────────────────────────────────── -->
+  <nav class="bg-white border-b border-gray-200 sticky top-14 z-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex">
+      <button class="tab-btn active-tab px-5 py-3 text-sm font-medium" data-tab="pipeline">Pipeline</button>
+      <button class="tab-btn px-5 py-3 text-sm font-medium" data-tab="layout">Layout</button>
+      <button class="tab-btn px-5 py-3 text-sm font-medium" data-tab="metrics">Metrics</button>
+    </div>
+  </nav>
+
+  <style>
+    .tab-btn {
+      border-bottom: 2px solid transparent;
+      color: #6b7280;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: #374151; }
+    .tab-btn.active-tab {
+      border-bottom-color: #4f46e5;
+      color: #4f46e5;
+      font-weight: 600;
+    }
+  </style>
+
+  <!-- ── Main content ──────────────────────────────────────────────────────── -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- ════════════════ PIPELINE TAB ════════════════ -->
+    <div id="tab-pipeline" class="tab-panel space-y-6">
+
+      <!-- Health KPI row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="health-cards">
+        <!-- filled by JS -->
+      </div>
+
+      <!-- CI stage results table -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-gray-800">CI/CD Stage Results</h2>
+          <a id="run-link" href="#" target="_blank" rel="noopener"
+             class="text-xs text-indigo-600 hover:underline hidden">View run →</a>
+        </div>
+        <div id="ci-table-body" class="divide-y divide-gray-100"></div>
+        <div id="ci-no-data" class="hidden px-6 py-10 text-center text-sm text-gray-400">
+          No <code>ci_results.json</code> found. Run CI/CD to populate this section.
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ LAYOUT TAB ════════════════ -->
+    <div id="tab-layout" class="tab-panel hidden space-y-6">
+
+      <!-- Die metadata cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="die-cards"></div>
+
+      <!-- Pan/zoom chip render -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-gray-800">Chip Layout Render</h2>
+          <div class="flex items-center gap-4">
+            <span class="text-xs text-gray-400">Scroll to zoom · Drag to pan</span>
+            <button id="panzoom-reset"
+              class="text-xs text-indigo-600 hover:underline font-medium">Reset</button>
+          </div>
+        </div>
+        <div id="panzoom-wrap" class="w-full overflow-hidden bg-gray-900 select-none" style="height:600px">
+          <img id="layout-img" src="render/lugs_soc_chip.png"
+               alt="Chip layout render" draggable="false"
+               class="block w-full h-auto"
+               onerror="this.parentElement.innerHTML='<div class=\'flex items-center justify-center h-full text-gray-500 text-sm\'>Layout image not yet available. Run CI/CD first.</div>'" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ METRICS TAB ════════════════ -->
+    <div id="tab-metrics" class="tab-panel hidden space-y-6">
+
+      <!-- Top KPI row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="kpi-cards"></div>
+
+      <!-- Charts row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <h2 class="text-sm font-semibold text-gray-800 mb-1">Area Breakdown</h2>
+          <p class="text-xs text-gray-400 mb-4">Core instance area by category (µm²)</p>
+          <div id="chart-area" style="height:300px;"></div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <h2 class="text-sm font-semibold text-gray-800 mb-1">Power Breakdown</h2>
+          <p class="text-xs text-gray-400 mb-4">Typical corner (µW)</p>
+          <div id="chart-power" style="height:300px;"></div>
+        </div>
+      </div>
+
+      <!-- Timing table -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3 justify-between">
+          <h2 class="text-sm font-semibold text-gray-800">Timing Summary</h2>
+          <div id="corner-selector" class="flex gap-2">
+            <button class="corner-btn active-corner text-xs px-3 py-1 rounded-full font-medium"
+                    data-corner="nom_typ_1p20V_25C">Typical</button>
+            <button class="corner-btn text-xs px-3 py-1 rounded-full font-medium"
+                    data-corner="nom_fast_1p32V_m40C">Fast</button>
+            <button class="corner-btn text-xs px-3 py-1 rounded-full font-medium"
+                    data-corner="nom_slow_1p08V_125C">Slow</button>
+          </div>
+        </div>
+        <div id="timing-table" class="px-6 py-4 overflow-x-auto"></div>
+      </div>
+
+      <!-- Additional instance stats table -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+          <h2 class="text-sm font-semibold text-gray-800">Instance Count &amp; Area Summary</h2>
+        </div>
+        <div id="instance-table" class="px-6 py-4 overflow-x-auto"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <style>
+    .corner-btn { background: #f3f4f6; color: #4b5563; }
+    .corner-btn:hover { background: #e0e7ff; color: #4338ca; }
+    .corner-btn.active-corner { background: #e0e7ff; color: #4338ca; }
+  </style>
+
+  <footer class="mt-12 border-t border-gray-100 py-6">
+    <p class="text-center text-xs text-gray-400">Lugs-SoC · Auto-generated by CI/CD</p>
+  </footer>
+
+  <script>
+  (() => {
+    'use strict';
+
+    // ── Tab switching ──────────────────────────────────────────────────────────
+    const tabBtns  = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    let metricsChartsReady = false;
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        tabBtns.forEach(b => b.classList.toggle('active-tab', b === btn));
+        tabPanels.forEach(p => {
+          const isTarget = p.id === `tab-${target}`;
+          p.classList.toggle('hidden', !isTarget);
+          if (isTarget) p.classList.add('tab-panel');
+        });
+        if (target === 'metrics' && !metricsChartsReady) {
+          renderMetricsCharts();
+          metricsChartsReady = true;
+        }
+      });
+    });
+
+    // ── Utilities ──────────────────────────────────────────────────────────────
+    function kpiCard(label, value, sub, badge = null) {
+      const badgeHtml = badge
+        ? `<span class="inline-block mt-1 px-1.5 py-0.5 rounded text-xs font-semibold ${badge.cls}">${badge.text}</span>`
+        : '';
+      return `
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+          <div class="text-xs text-gray-500 font-medium mb-1">${label}</div>
+          <div class="text-2xl font-bold text-gray-900 leading-none">${value}</div>
+          ${badgeHtml}
+          ${sub ? `<div class="text-xs text-gray-400 mt-1">${sub}</div>` : ''}
+        </div>`;
+    }
+
+    function statusIcon(outcome) {
+      return {
+        success:   '<svg class="w-4 h-4 text-green-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>',
+        failure:   '<svg class="w-4 h-4 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>',
+        cancelled: '<svg class="w-4 h-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>',
+        skipped:   '<svg class="w-4 h-4 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"/></svg>',
+      }[outcome] || '<svg class="w-4 h-4 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="7"/></svg>';
+    }
+
+    function outcomeBadge(outcome) {
+      const cls = {
+        success:   'bg-green-100 text-green-700',
+        failure:   'bg-red-100 text-red-700',
+        cancelled: 'bg-yellow-100 text-yellow-700',
+        skipped:   'bg-gray-100 text-gray-500',
+      };
+      return `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${cls[outcome] || 'bg-gray-100 text-gray-400'}">${outcome}</span>`;
+    }
+
+    function fmt(n, decimals = 2) {
+      if (n === undefined || n === null) return '—';
+      if (typeof n === 'number') return n.toFixed(decimals);
+      return String(n);
+    }
+
+    function fmtInt(n) {
+      if (n === undefined || n === null) return '—';
+      return Number(n).toLocaleString();
+    }
+
+    // ── Data loading ───────────────────────────────────────────────────────────
+    let M = null;   // metrics.json
+    let CI = null;  // ci_results.json
+
+    async function loadData() {
+      const [mRes, cRes] = await Promise.allSettled([
+        fetch('./metrics.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+        fetch('./ci_results.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+      ]);
+      M  = mRes.status  === 'fulfilled' ? mRes.value  : null;
+      CI = cRes.status  === 'fulfilled' ? cRes.value  : null;
+
+      populatePipeline();
+      populateLayout();
+      populateKpiCards();
+      initPanzoom();
+    }
+
+    // ── Pipeline tab ───────────────────────────────────────────────────────────
+    const STAGES = [
+      ['test_ibex',    'test-base / ibex-build',        false],
+      ['test_tpu',     'test-base / tpu-build',         false],
+      ['test_sram',    'test-base / sram',              false],
+      ['test_rtl',     'test-rtl',                      false],
+      ['harden_ibex',  'harden / ibex-build',           false],
+      ['harden_tpu',   'harden / tpu-build',            false],
+      ['harden_sram',  'harden / sram',                 false],
+      ['drc_sram',     'drc / sram',                    true],  // non-blocking
+      ['harden_top',   'harden / top-level SoC',        false],
+      ['drc_top',      'drc / top-level',               true],  // non-blocking
+    ];
+
+    function populatePipeline() {
+      // Health KPIs from metrics.json
+      if (M) {
+        const fe = M['flow__errors__count'] ?? 0;
+        const drc = M['klayout__drc_error__count'] ?? 0;
+        const viol = M['design__violations'] ?? 0;
+        const le = M['design__lint_error__count'] ?? 0;
+
+        const redBadge  = { cls: 'bg-red-100 text-red-700',    text: 'fail' };
+        const greenBadge = { cls: 'bg-green-100 text-green-700', text: 'pass' };
+
+        document.getElementById('health-cards').innerHTML = [
+          kpiCard('Flow Errors',       fe,  'flow__errors__count',         fe  > 0 ? redBadge  : greenBadge),
+          kpiCard('DRC Errors',        drc, 'klayout__drc_error__count',   drc > 0 ? redBadge  : greenBadge),
+          kpiCard('Design Violations', viol,'design__violations',          viol> 0 ? redBadge  : greenBadge),
+          kpiCard('Lint Errors',       le,  'design__lint_error__count',   le  > 0 ? redBadge  : greenBadge),
+        ].join('');
+      }
+
+      // CI stages
+      const tableBody = document.getElementById('ci-table-body');
+      const noData    = document.getElementById('ci-no-data');
+
+      if (CI) {
+        // Build meta
+        if (CI.timestamp) {
+          document.getElementById('build-meta').innerHTML =
+            `<div>Commit: <span class="font-mono">${(CI.commit_sha || '').slice(0, 7) || '—'}</span></div>` +
+            `<div>${new Date(CI.timestamp).toLocaleString()}</div>`;
+        }
+        if (CI.run_url) {
+          const link = document.getElementById('run-link');
+          link.href = CI.run_url;
+          link.classList.remove('hidden');
+        }
+
+        tableBody.innerHTML = STAGES.map(([key, label, nonBlocking]) => {
+          const outcome = (CI.stages || {})[key] || 'unknown';
+          return `
+            <div class="flex items-center justify-between px-6 py-3 hover:bg-gray-50">
+              <div class="flex items-center gap-3 min-w-0">
+                ${statusIcon(outcome)}
+                <span class="text-sm text-gray-700 truncate">${label}</span>
+                ${nonBlocking ? '<span class="text-xs text-gray-400 ml-1 hidden sm:inline">(non-blocking)</span>' : ''}
+              </div>
+              ${outcomeBadge(outcome)}
+            </div>`;
+        }).join('');
+      } else {
+        noData.classList.remove('hidden');
+      }
+    }
+
+    // ── Layout tab ─────────────────────────────────────────────────────────────
+    function populateLayout() {
+      if (!M) return;
+      const dieArea  = ((M['design__die__area']  || 0) / 1e6).toFixed(3);
+      const coreArea = ((M['design__core__area'] || 0) / 1e6).toFixed(3);
+      const util     = ((M['design__instance__utilization'] || 0) * 100).toFixed(1);
+      const pads     = fmtInt(M['design__instance__count__padcells']);
+
+      document.getElementById('die-cards').innerHTML = [
+        kpiCard('Die Area',      `${dieArea} mm²`,  M['design__die__bbox']  || ''),
+        kpiCard('Core Area',     `${coreArea} mm²`, M['design__core__bbox'] || ''),
+        kpiCard('Utilization',   `${util}%`,         'core instance utilization'),
+        kpiCard('Pad Cells',     pads,               'placed pad cells'),
+      ].join('');
+    }
+
+    // ── Panzoom ────────────────────────────────────────────────────────────────
+    function initPanzoom() {
+      const img  = document.getElementById('layout-img');
+      const wrap = document.getElementById('panzoom-wrap');
+      if (!img || !wrap) return;
+
+      function setup() {
+        const pz = Panzoom(img, { maxScale: 12, minScale: 0.3, contain: 'outside' });
+        wrap.addEventListener('wheel', pz.zoomWithWheel, { passive: false });
+        document.getElementById('panzoom-reset')
+          .addEventListener('click', () => pz.reset({ animate: true }));
+      }
+
+      if (img.complete && img.naturalWidth > 0) {
+        setup();
+      } else {
+        img.addEventListener('load', setup, { once: true });
+      }
+    }
+
+    // ── Metrics tab ────────────────────────────────────────────────────────────
+    function populateKpiCards() {
+      if (!M) return;
+      const powTotal = ((M['power__total'] || 0) * 1e6).toFixed(2);
+      const instances = fmtInt(M['design__instance__count']);
+      const wirelength = fmtInt(M['route__wirelength']);
+      const nets = fmtInt(M['route__net']);
+
+      document.getElementById('kpi-cards').innerHTML = [
+        kpiCard('Total Instances',  instances,         'std + macro + pads + cover + fill'),
+        kpiCard('Total Power',      `${powTotal} µW`,  'typical corner, all components'),
+        kpiCard('Routed Nets',      nets,              'route__net'),
+        kpiCard('Wirelength',       `${wirelength} µm`,'route__wirelength'),
+      ].join('');
+    }
+
+    const CORNERS_LABEL = {
+      'nom_typ_1p20V_25C':  'Typical — 1.20 V, 25 °C',
+      'nom_fast_1p32V_m40C':'Fast — 1.32 V, −40 °C',
+      'nom_slow_1p08V_125C':'Slow — 1.08 V, 125 °C',
+    };
+
+    const TIMING_ROWS = [
+      ['Setup WS (path)',    'timing__setup__ws__corner',       'ns', false],
+      ['Hold WS (path)',     'timing__hold__ws__corner',        'ns', false],
+      ['Setup WS (reg→reg)','timing__setup_r2r__ws__corner',   'ns', false],
+      ['Hold WS (reg→reg)', 'timing__hold_r2r__ws__corner',    'ns', false],
+      ['Setup WNS',         'timing__setup__wns__corner',      'ns', false],
+      ['Hold WNS',          'timing__hold__wns__corner',       'ns', false],
+      ['Setup TNS',         'timing__setup__tns__corner',      'ns', false],
+      ['Hold TNS',          'timing__hold__tns__corner',       'ns', false],
+      ['Setup Violations',  'timing__setup_vio__count__corner','',   true],
+      ['Hold Violations',   'timing__hold_vio__count__corner', '',   true],
+      ['Clock Skew (setup)','clock__skew__worst_setup__corner','ns', false],
+      ['Clock Skew (hold)', 'clock__skew__worst_hold__corner', 'ns', false],
+    ];
+
+    const INSTANCE_ROWS = [
+      ['Std Cells',         'design__instance__count__stdcell',       'design__instance__area__stdcell'],
+      ['Macros',            'design__instance__count__macros',        'design__instance__area__macros'],
+      ['Pad Cells',         'design__instance__count__padcells',      'design__instance__area__padcells'],
+      ['Cover / Corner',    'design__instance__count__cover',         'design__instance__area__cover'],
+      ['Fill Cells',        'design__instance__count__class:fill_cell','design__instance__area__class:fill_cell'],
+      ['Timing Buffers',    'design__instance__count__class:timing_repair_buffer','design__instance__area__class:timing_repair_buffer'],
+      ['Clock Buffers',     'design__instance__count__class:clock_buffer','design__instance__area__class:clock_buffer'],
+      ['Hold Buffers',      'design__instance__count__hold_buffer',   null],
+    ];
+
+    let activeCorner = 'nom_typ_1p20V_25C';
+
+    function renderTimingTable(corner) {
+      if (!M) { document.getElementById('timing-table').innerHTML = '<p class="text-sm text-gray-400">Metrics not loaded.</p>'; return; }
+      const rows = TIMING_ROWS.map(([label, prefix, unit, isVio]) => {
+        const key = `${prefix}:${corner}`;
+        const val = M[key];
+        const display = val === undefined ? '—' : (typeof val === 'number' ? val.toFixed(4) : val);
+        let valCls = 'text-gray-800 font-mono';
+        if (isVio) {
+          valCls = val > 0 ? 'text-red-600 font-semibold font-mono' : 'text-green-600 font-mono';
+        }
+        return `
+          <tr class="border-t border-gray-100 hover:bg-gray-50">
+            <td class="py-2 pr-8 text-sm text-gray-600 whitespace-nowrap">${label}</td>
+            <td class="py-2 text-sm ${valCls}">${display}${val !== undefined && unit ? ` <span class="text-gray-400 text-xs">${unit}</span>` : ''}</td>
+          </tr>`;
+      }).join('');
+
+      document.getElementById('timing-table').innerHTML =
+        `<p class="text-xs text-gray-400 mb-3">${CORNERS_LABEL[corner]}</p>
+         <table class="w-full min-w-[300px]"><tbody>${rows}</tbody></table>`;
+    }
+
+    function renderInstanceTable() {
+      if (!M) return;
+      const rows = INSTANCE_ROWS.map(([label, cntKey, areaKey]) => {
+        const cnt  = M[cntKey];
+        const area = areaKey ? M[areaKey] : null;
+        return `
+          <tr class="border-t border-gray-100 hover:bg-gray-50">
+            <td class="py-2 pr-8 text-sm text-gray-700 whitespace-nowrap">${label}</td>
+            <td class="py-2 text-sm font-mono text-gray-800 text-right pr-8">${cnt !== undefined ? fmtInt(cnt) : '—'}</td>
+            <td class="py-2 text-sm font-mono text-gray-800 text-right">${area !== undefined && area !== null ? fmtInt(Math.round(area)) + ' µm²' : '—'}</td>
+          </tr>`;
+      }).join('');
+
+      document.getElementById('instance-table').innerHTML = `
+        <table class="w-full min-w-[360px]">
+          <thead>
+            <tr>
+              <th class="pb-2 text-xs font-semibold text-gray-500 text-left">Category</th>
+              <th class="pb-2 text-xs font-semibold text-gray-500 text-right pr-8">Count</th>
+              <th class="pb-2 text-xs font-semibold text-gray-500 text-right">Area</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    function renderMetricsCharts() {
+      if (!M) {
+        ['chart-area','chart-power','timing-table','instance-table'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.innerHTML = '<p class="text-sm text-gray-400 text-center py-8">Metrics data not available.</p>';
+        });
+        return;
+      }
+
+      // ── Area pie chart ─────────────────────────────────────────────────────
+      const areaLabels = ['Std Cells', 'Macros', 'Pad Cells', 'Cover/Corner', 'Fill'];
+      const areaValues = [
+        M['design__instance__area__stdcell']          || 0,
+        M['design__instance__area__macros']           || 0,
+        M['design__instance__area__padcells']         || 0,
+        M['design__instance__area__cover']            || 0,
+        M['design__instance__area__class:fill_cell']  || 0,
+      ];
+
+      Plotly.newPlot('chart-area', [{
+        type: 'pie',
+        labels: areaLabels,
+        values: areaValues,
+        hole: 0.38,
+        textinfo: 'label+percent',
+        hovertemplate: '<b>%{label}</b><br>%{value:,.0f} µm²<br>%{percent}<extra></extra>',
+        marker: { colors: ['#6366f1','#f59e0b','#10b981','#3b82f6','#d1d5db'] },
+        direction: 'clockwise',
+      }], {
+        margin: { t: 0, b: 40, l: 0, r: 0 },
+        showlegend: true,
+        legend: { orientation: 'h', y: -0.15, xanchor: 'center', x: 0.5, font: { size: 11 } },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor:  'transparent',
+      }, { responsive: true, displayModeBar: false });
+
+      // ── Power bar chart ────────────────────────────────────────────────────
+      const toUW = v => ((v || 0) * 1e6);
+      const powInternal  = toUW(M['power__internal__total']);
+      const powSwitching = toUW(M['power__switching__total']);
+      const powLeakage   = toUW(M['power__leakage__total']);
+
+      Plotly.newPlot('chart-power', [{
+        type: 'bar',
+        x: ['Internal', 'Switching', 'Leakage'],
+        y: [powInternal, powSwitching, powLeakage],
+        marker: { color: ['#6366f1','#f59e0b','#10b981'] },
+        text: [powInternal.toFixed(3), powSwitching.toFixed(3), powLeakage.toFixed(3)],
+        textposition: 'outside',
+        hovertemplate: '<b>%{x}</b><br>%{y:.4f} µW<extra></extra>',
+      }], {
+        margin: { t: 20, b: 40, l: 70, r: 20 },
+        yaxis: { title: { text: 'Power (µW)', font: { size: 11 } }, gridcolor: '#f3f4f6', zeroline: false },
+        xaxis: { fixedrange: true },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor:  'transparent',
+        bargap: 0.45,
+      }, { responsive: true, displayModeBar: false });
+
+      // ── Timing table ───────────────────────────────────────────────────────
+      renderTimingTable(activeCorner);
+
+      // Corner toggle
+      document.querySelectorAll('.corner-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.corner-btn').forEach(b => b.classList.toggle('active-corner', b === btn));
+          activeCorner = btn.dataset.corner;
+          renderTimingTable(activeCorner);
+        });
+      });
+
+      // ── Instance table ─────────────────────────────────────────────────────
+      renderInstanceTable();
+    }
+
+    // ── Bootstrap ──────────────────────────────────────────────────────────────
+    loadData();
+  })();
+  </script>
+</body>
+</html>

@@ -1,4 +1,0 @@
-# Librelane config for the ibex + wrapper build.
-# Architecture TBD.
-# Ideally, I'd like ibex to use APB for periph + AXI for the SRAM interface, but the SRAM macro.
-# Then, we connect this to PULP's uDMA as periph.
